@@ -2,4 +2,4 @@ install:
 			npm ci
 
 lint:
-			npx eslint --fixs
+			npx eslint --fix
