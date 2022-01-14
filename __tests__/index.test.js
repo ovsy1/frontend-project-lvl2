@@ -1,27 +1,29 @@
-import fs from 'fs';
+import { expect, test } from '@jest/globals';
 import { fileURLToPath } from 'url';
-import path, { dirname, format } from 'path';
+import path from 'path';
+import * as fs from 'fs';
 import genDiff from '../src/index.js';
-import { TestWatcher } from 'jest';
-import { get } from 'http';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const getFixturePath = (filename) = path.join(__dirname, '..', '__fixtures__', filename);
-const readFile = (filename) = fs.readFileSync(getFixturePath(filename), 'utf-8');
-
-const cases = [
-  ['file1.json', 'file2.json', 'resultjson.txt', 'json'],
-  ['file1.yml', 'file2.yml', 'resultstylish.txt', 'stylish'],
-  ['file1.json', 'file2.json', 'resultstylish.txt', 'stylish'],
-  ['file1.json', 'file2.json', 'resultplain.txt', 'plain'],
+const __dirname = path.dirname(__filename);
+const getFixturePath = (filename) => path.join(__dirname, '..', '__fixtures__', filename);
+const filesToCompare = [
+  { file1: 'file1.json', file2: 'file2.json' },
+  { file1: 'file1.yaml', file2: 'file2.yml' },
+  { file1: 'file1.json', file2: 'file2.yml' },
 ];
 
-test.each(cases)('Compare %s and %s to expect %s in "%s" style', (firstArg, secondArg, expectedResult, format) => {
-  const firstFile = getFixturePath(firstArg);
-  const secondFile = getFixturePath(secondArg);
-  const getResult = readFile(expectedResult);
-  const result = genDiff(firstFile, secondFile, format);
-  expect(result).toEqual(getResult);
+const resultStylish = fs.readFileSync(getFixturePath('result_Stylish.txt'), 'utf-8');
+const resultPlain = fs.readFileSync(getFixturePath('result_Plain.txt'), 'utf-8');
+const resultJson = fs.readFileSync(getFixturePath('result_Json.txt'), 'utf-8');
+
+test.each(filesToCompare)('genDiff($file1, $file2)', ({ file1, file2 }) => {
+  expect(genDiff(getFixturePath(file1), getFixturePath(file2)))
+    .toEqual(resultStylish);
+  expect(genDiff(getFixturePath(file1), getFixturePath(file2), 'stylish'))
+    .toEqual(resultStylish);
+  expect(genDiff(getFixturePath(file1), getFixturePath(file2), 'plain'))
+    .toEqual(resultPlain);
+  expect(genDiff(getFixturePath(file1), getFixturePath(file2), 'json'))
+    .toEqual(resultJson);
 });
