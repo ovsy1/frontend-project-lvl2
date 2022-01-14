@@ -1,4 +1,4 @@
-name: tests and lint
+name: linter and test status
 
 on:
   - push
