@@ -1,15 +1,8 @@
-import stylish from './stylish.js';
-import plain from './plain.js';
+import makeStylish from './stylish.js';
+import makePlain from './plain.js';
+import makeJson from './json.js';
 
-export default (innerTree, format) => {
-  switch (format) {
-    case 'stylish':
-      return stylish(innerTree);
-    case 'plain':
-      return plain(innerTree);
-    case 'json':
-      return JSON.stringify(innerTree);
-    default:
-      throw new Error(`Формат не поддерживается: ${format}`);
-  }
-};
+const formatters = { stylish: makeStylish, plain: makePlain, json: makeJson };
+const makeFormattedTree = (differencesTree, format) => formatters[format](differencesTree.children);
+
+export default makeFormattedTree;

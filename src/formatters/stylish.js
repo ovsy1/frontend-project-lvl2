@@ -1,37 +1,35 @@
-const indent = (depth, spaceCount = 4) => ' '.repeat(spaceCount * depth - 2);
-const stringify = (data, treeDepth) => {
-  if (typeof data !== 'object') {
-    return `${data}`;
+import _ from 'lodash';
+
+const getSpace = (count) => ('    '.repeat(count));
+const getString = (value, count = 0) => {
+  if (!_.isObject(value)) {
+    return String(value);
   }
-  if (data === null) { return null; }
-  const lines = Object
-    .entries(data)
-    .map(([key, value]) => `${indent(treeDepth + 1)}  ${key}: ${stringify(value, treeDepth + 1)}`);
-  return [
-    '{',
-    ...lines,
-    `${indent(treeDepth)}  }`,
-  ].join('\n');
+  const explainedValue = _.keys(value).map((item) => `${getSpace(count)}    ${item}: ${getString(value[item], count + 1)}`);
+  return `{\n${explainedValue.join('\n')}\n${getSpace(count)}}`;
 };
-const stylish = (innerTree) => {
-  const iter = (tree, depth) => tree.map((node) => {
-    const getValue = (value, sign) => `${indent(depth)}${sign} ${node.key}: ${stringify(value, depth)}\n`;
-    switch (node.type) {
-      case 'add':
-        return getValue(node.val, '+');
-      case 'remove':
-        return getValue(node.val, '-');
-      case 'same':
-        return getValue(node.val, ' ');
-      case 'updated':
-        return `${getValue(node.val1, '-')}${getValue(node.val2, '+')}`;
-      case 'recursion':
-        return `${indent(depth)}  ${node.key}: {\n${iter(node.children, depth + 1).join('')}${indent(depth)}  }\n`;
+const getCommonString = (mark, value, name, count) => `${getSpace(count)}  ${mark} ${name}: ${getString(value, count + 1)}`;
+const getChangedString = (name, oldValue, newValue, count) => `${getSpace(count)}  - ${name}: ${getString(oldValue, count + 1)}\n ${getSpace(count)} + ${name}: ${getString(newValue, count + 1)}`;
+
+const stylish = (differences, count = 0) => {
+  const arrayOfDifferences = differences.map((item) => {
+    switch (item.type) {
+      case 'unchanged':
+        return getCommonString(' ', item.value, item.name, count);
+      case 'changed':
+        return getChangedString(item.name, item.value.oldValue, item.value.newValue, count);
+      case 'added':
+        return getCommonString('+', item.value, item.name, count);
+      case 'removed':
+        return getCommonString('-', item.value, item.name, count);
+      case 'parent':
+        return `${getSpace(count)}    ${item.name}: ${stylish(item.children, count + 1)}`;
       default:
-        throw new Error(`Этого типа не существует: ${node.type}`);
+        throw new Error(`Type ${item.type} of ${item.name} not recognized`);
     }
   });
-  return `{\n${iter(innerTree, 1).join('')}}`;
+  return `{\n${arrayOfDifferences.join('\n')}\n${getSpace(count)}}`;
 };
+const makeStylish = (differences) => stylish(differences, 0);
 
-export default stylish;
+export default makeStylish;

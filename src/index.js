@@ -1,20 +1,20 @@
-import fs from 'fs';
+import * as fs from 'fs';
 import path from 'path';
 import parse from './parsers.js';
-import format from './formatters/index.js';
-import buildTree from './treeGenerate.js';
+import buildDifferencesTree from './differencesTreeMaker.js';
+import makeFormattedTree from './formatters/index.js';
 
-const readFile = (filename) => fs.readFileSync(path.resolve(process.cwd(), filename.trim()), 'utf-8');
-const extractFormat = (filename) => path.extname(filename).slice(1);
+const getPath = (filename) => path.resolve(process.cwd(), filename);
+const getParsedData = (filename) => {
+  const filepath = getPath(filename);
+  const extension = path.extname(filepath).slice(1);
+  return parse(fs.readFileSync(filepath, 'utf-8'), extension);
+};
 
-const genDiff = (filepath1, filepath2, formatName = 'stylish') => {
-  const file1format = extractFormat(filepath1);
-  const file2format = extractFormat(filepath2);
-  const fileContent1 = readFile(filepath1);
-  const fileContent2 = readFile(filepath2);
-  const data1 = parse(file1format, fileContent1);
-  const data2 = parse(file2format, fileContent2);
-  const innerTree = buildTree(data1, data2);
-  return format(innerTree, formatName);
+const genDiff = (filepath1, filepath2, format = 'stylish') => {
+  const dataFromFile1 = getParsedData(filepath1);
+  const dataFromFile2 = getParsedData(filepath2);
+  const differencesTree = buildDifferencesTree(dataFromFile1, dataFromFile2);
+  return makeFormattedTree(differencesTree, format);
 };
 export default genDiff;

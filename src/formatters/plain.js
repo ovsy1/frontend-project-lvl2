@@ -1,33 +1,34 @@
-const stringify = (value) => {
-  if (typeof value === 'object' && value !== null) {
+import _ from 'lodash';
+
+const getString = (value) => {
+  if (_.isObject(value)) {
     return '[complex value]';
-  } if (typeof value === 'string') {
+  }
+  if (typeof value === 'string') {
     return `'${value}'`;
-  } if (value === null) {
-    return null;
   }
   return String(value);
 };
-
-const plain = (innerTree) => {
-  const format = (nodes, parent) => nodes
-    .filter((node) => node.type !== 'same')
-    .map((node) => {
-      const property = parent ? `${parent}.${node.key}` : node.key;
-      switch (node.type) {
-        case 'add':
-          return `Property '${property}' was added with value: ${stringify(node.val)}`;
-        case 'remove':
-          return `Property '${property}' was removed`;
-        case 'updated':
-          return `Property '${property}' was updated. From ${stringify(node.val1)} to ${stringify(node.val2)}`;
-        case 'recursion':
-          return `${format(node.children, property)}`;
+const getName = (item, parent) => (parent === '' ? `${item.name}` : `${parent}.${item.name}`);
+const plain = (differences, parent = '') => {
+  const lines = differences
+    .filter((item) => item.type !== 'unchanged')
+    .map((item) => {
+      switch (item.type) {
+        case 'changed':
+          return `Property '${getName(item, parent)}' was updated. From ${getString(item.value.oldValue)} to ${getString(item.value.newValue)}`;
+        case 'added':
+          return `Property '${getName(item, parent)}' was added with value: ${getString(item.value)}`;
+        case 'removed':
+          return `Property '${getName(item, parent)}' was removed`;
+        case 'parent':
+          return plain(item.children, getName(item, parent));
         default:
-          throw new Error(`Такого типа не существует ${node.type}`);
+          throw new Error(`Type ${item.type} of ${item.name} not recognized`);
       }
-    }).join('\n');
-  return format(innerTree, 0);
+    });
+  return lines.join('\n');
 };
+const makePlain = (differences) => plain(differences, '');
 
-export default plain;
+export default makePlain;
