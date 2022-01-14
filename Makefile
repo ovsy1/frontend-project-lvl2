@@ -1,20 +1,17 @@
-install: 
-			npm ci
+install:
+	npm ci
+	
+publish:
+	npm publish --dry-run
 
 lint:
-			npx eslint --fix
-
-json:
-			node bin/gendiff.js --format json __fixtures__/file1.json __fixtures__/file2.json
-
-plain:
-			node bin/gendiff.js --format plain __fixtures__/file1.json __fixtures__/file2.json
-
-yml:
-			node bin/gendiff.js __fixtures__/file1.yml __fixtures__/file2.yml
+	npx eslint .
 
 test:
-			npm test
+	npm test
 
 test-coverage:
-			npm test -- --coverage 
+	npm test -- --coverage --coverageProvider=v8
+
+run:
+	bin/gendiff.js
