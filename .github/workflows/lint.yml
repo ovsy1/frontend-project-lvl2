@@ -20,7 +20,6 @@ jobs:
         run: make install
 
       # Install your linters here
-
       - name: Run linters
         run: make lint
 
