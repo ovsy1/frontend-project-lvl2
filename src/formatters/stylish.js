@@ -1,35 +1,52 @@
 import _ from 'lodash';
 
 const getSpace = (count) => ('    '.repeat(count));
-const getString = (value, count = 0) => {
-  if (!_.isObject(value)) {
-    return String(value);
-  }
-  const explainedValue = _.keys(value).map((item) => `${getSpace(count)}    ${item}: ${getString(value[item], count + 1)}`);
-  return `{\n${explainedValue.join('\n')}\n${getSpace(count)}}`;
-};
-const getCommonString = (mark, value, name, count) => `${getSpace(count)}  ${mark} ${name}: ${getString(value, count + 1)}`;
-const getChangedString = (name, oldValue, newValue, count) => `${getSpace(count)}  - ${name}: ${getString(oldValue, count + 1)}\n ${getSpace(count)} + ${name}: ${getString(newValue, count + 1)}`;
 
-const stylish = (differences, count = 0) => {
-  const arrayOfDifferences = differences.map((item) => {
-    switch (item.type) {
-      case 'unchanged':
-        return getCommonString(' ', item.value, item.name, count);
-      case 'changed':
-        return getChangedString(item.name, item.value.oldValue, item.value.newValue, count);
-      case 'added':
-        return getCommonString('+', item.value, item.name, count);
-      case 'removed':
-        return getCommonString('-', item.value, item.name, count);
-      case 'parent':
-        return `${getSpace(count)}    ${item.name}: ${stylish(item.children, count + 1)}`;
-      default:
-        throw new Error(`Type ${item.type} of ${item.name} not recognized`);
-    }
-  });
-  return `{\n${arrayOfDifferences.join('\n')}\n${getSpace(count)}}`;
+const getString = (value, count) => {
+  const offset = getSpace(count);
+  const childrenOffset = getSpace(count + 1);
+  if (!_.isObject(value)) {
+    return value;
+  }
+  const keys = _.keys(value);
+  const renderedStrings = keys.map((key) => `${childrenOffset}    ${[key]}: ${getString(value[key], count + 1)}`);
+  return `{\n${renderedStrings.join('\n')}\n${offset}    }`;
 };
-const makeStylish = (differences) => stylish(differences, 0);
+
+const diffsToString = (diffs, depth = 0) => {
+  const diffToString = (diff, count) => {
+    const {
+      name,
+      type,
+      value,
+      value1,
+      value2,
+      children,
+    } = diff;
+    const offset = getSpace(count);
+
+    switch (type) {
+      case 'nested':
+        return `${offset}    ${name}: {\n${diffsToString(children, count + 1)}\n${offset}    }`;
+      case 'unchanged':
+        return `${offset}    ${name}: ${getString(value, count)}`;
+      case 'changed':
+        return `${offset}  - ${name}: ${getString(value1, count)}\n${offset}  + ${name}: ${getString(value2, count)}`;
+      case 'removed':
+        return `${offset}  - ${name}: ${getString(value, count)}`;
+      case 'added':
+        return `${offset}  + ${name}: ${getString(value, count)}`;
+      default:
+        throw new Error(`Unknown type of difference: '${type}'!`);
+    }
+  };
+
+  return `${diffs.map((diff) => diffToString(diff, depth)).join('\n')}`;
+};
+
+const makeStylish = (diffs) => {
+  if (diffs.length !== 0) return `{\n${diffsToString(diffs)}\n}`;
+  return '';
+};
 
 export default makeStylish;

@@ -1,35 +1,45 @@
 import _ from 'lodash';
 
-const getDifferences = (data1, data2) => {
-  const keysFromData1 = _.keys(data1);
-  const keysFromData2 = _.keys(data2);
-  const commonKeys = _.union(keysFromData1, keysFromData2);
-  const sortedCommonKeys = _.sortBy(commonKeys);
-  const differences = sortedCommonKeys.map((item) => {
-    if (_.isPlainObject(data1[item]) && _.isPlainObject(data2[item])) {
-      return { name: item, children: getDifferences(data1[item], data2[item]), type: 'parent' };
-    }
-    if (!_.has(data1, item)) {
-      return { name: item, value: data2[item], type: 'added' };
-    }
-    if (!_.has(data2, item)) {
-      return { name: item, value: data1[item], type: 'removed' };
-    }
-    if (!_.isEqual(data1[item], data2[item])) {
+const buildTree = (data1, data2) => {
+  const uniqueKeys = _.union(_.keys(data1), _.keys(data2));
+  const sortedKeys = _.sortBy(uniqueKeys);
+
+  return sortedKeys.map((key) => {
+    if (_.isPlainObject(data1[key]) && _.isPlainObject(data2[key])) {
       return {
-        name: item,
-        value: { oldValue: data1[item], newValue: data2[item] },
-        type: 'changed',
+        name: key,
+        children: buildTree(data1[key], data2[key]),
+        type: 'nested',
       };
     }
-    return { name: item, value: data1[item], type: 'unchanged' };
+    if (!_.has(data1, key)) {
+      return {
+        name: key,
+        type: 'added',
+        value: data2[key],
+      };
+    }
+    if (!_.has(data2, key)) {
+      return {
+        name: key,
+        type: 'removed',
+        value: data1[key],
+      };
+    }
+    if (!_.isEqual(data1[key], data2[key])) {
+      return {
+        name: key,
+        type: 'changed',
+        value1: data1[key],
+        value2: data2[key],
+      };
+    }
+    return {
+      name: key,
+      type: 'unchanged',
+      value: data1[key],
+    };
   });
-  return differences;
 };
 
-const buildDifferencesTree = (data1, data2) => {
-  const differences = getDifferences(data1, data2);
-  return { type: 'root', children: differences };
-};
-
-export default buildDifferencesTree;
+export default buildTree;
