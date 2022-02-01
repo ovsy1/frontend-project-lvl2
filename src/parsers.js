@@ -5,6 +5,10 @@ const parsers = {
   yml: yaml.load,
   yaml: yaml.load,
 };
-const parse = (content, extension) => parsers[extension](content);
+const parse = (stringData, dataType) => {
+  const parser = parsers[dataType];
+  const data = parser(stringData);
+  return data;
+};
 
 export default parse;

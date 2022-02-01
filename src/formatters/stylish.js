@@ -1,52 +1,43 @@
 import _ from 'lodash';
 
-const getSpace = (count) => ('    '.repeat(count));
+const getSpace = (depth, spacesCount = 4) => ' '.repeat(depth * spacesCount - 2);
 
-const getString = (value, count) => {
-  const offset = getSpace(count);
-  const childrenOffset = getSpace(count + 1);
-  if (!_.isObject(value)) {
-    return value;
+const getString = (data, depth, styleField) => {
+  if (!_.isObject(data)) {
+    return String(data);
   }
-  const keys = _.keys(value);
-  const renderedStrings = keys.map((key) => `${childrenOffset}    ${[key]}: ${getString(value[key], count + 1)}`);
-  return `{\n${renderedStrings.join('\n')}\n${offset}    }`;
+
+  const output = Object.entries(data)
+    .map(([name, value]) => styleField({ type: 'unchanged', name, value }, depth + 1));
+
+  return `{\n${output.join('\n')}\n${getSpace(depth)}  }`;
 };
 
-const diffsToString = (diffs, depth = 0) => {
-  const diffToString = (diff, count) => {
-    const {
-      name,
-      type,
-      value,
-      value1,
-      value2,
-      children,
-    } = diff;
-    const offset = getSpace(count);
-
-    switch (type) {
-      case 'nested':
-        return `${offset}    ${name}: {\n${diffsToString(children, count + 1)}\n${offset}    }`;
-      case 'unchanged':
-        return `${offset}    ${name}: ${getString(value, count)}`;
-      case 'changed':
-        return `${offset}  - ${name}: ${getString(value1, count)}\n${offset}  + ${name}: ${getString(value2, count)}`;
-      case 'removed':
-        return `${offset}  - ${name}: ${getString(value, count)}`;
-      case 'added':
-        return `${offset}  + ${name}: ${getString(value, count)}`;
-      default:
-        throw new Error(`Unknown type of difference: '${type}'!`);
+const styleField = (field, depth = 0) => {
+  switch (field.type) {
+    case 'root': {
+      const output = field.children.flatMap((node) => styleField(node, depth + 1));
+      return `{\n${output.join('\n')}\n}`;
     }
-  };
-
-  return `${diffs.map((diff) => diffToString(diff, depth)).join('\n')}`;
+    case 'nested': {
+      const output = field.children.flatMap((node) => styleField(node, depth + 1));
+      return `${getSpace(depth)}  ${field.name}: {\n${output.join('\n')}\n${getSpace(depth)}  }`;
+    }
+    case 'added':
+      return `${getSpace(depth)}+ ${field.name}: ${getString(field.value, depth, styleField)}`;
+    case 'removed':
+      return `${getSpace(depth)}- ${field.name}: ${getString(field.value, depth, styleField)}`;
+    case 'unchanged':
+      return `${getSpace(depth)}  ${field.name}: ${getString(field.value, depth, styleField)}`;
+    case 'changed': {
+      const { name, value1, value2 } = field;
+      const data1 = `${getSpace(depth)}- ${name}: ${getString(value1, depth, styleField)}`;
+      const data2 = `${getSpace(depth)}+ ${name}: ${getString(value2, depth, styleField)}`;
+      return `${data1}\n${data2}`;
+    }
+    default:
+      throw new Error('Error! Unknown type!');
+  }
 };
 
-const makeStylish = (diffs) => {
-  if (diffs.length !== 0) return `{\n${diffsToString(diffs)}\n}`;
-  return '';
-};
-
-export default makeStylish;
+export default styleField;

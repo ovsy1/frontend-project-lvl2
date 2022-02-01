@@ -12,14 +12,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ssk93-dev/frontend-project-lvl2.git"
+    "url": "git+https://github.com/ovsy1/frontend-project-lvl2.git"
   },
   "author": "Ratmir Kalimulin",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ssk93-dev/frontend-project-lvl2/issues"
+    "url": "https://github.com/ovsy1/frontend-project-lvl2/issues"
   },
-  "homepage": "https://github.com/ssk93-dev/frontend-project-lvl2#readme",
+  "homepage": "https://github.com/ovsy1/frontend-project-lvl2#readme",
   "devDependencies": {
     "@jest/globals": "^27.0.3",
     "eslint": "^7.28.0",

@@ -1,14 +1,13 @@
 import _ from 'lodash';
 
-const buildTree = (data1, data2) => {
-  const uniqueKeys = _.union(_.keys(data1), _.keys(data2));
-  const sortedKeys = _.sortBy(uniqueKeys);
+const compareObjects = (data1, data2) => {
+  const keys = _.sortBy(_.union(Object.keys(data1), Object.keys(data2)));
 
-  return sortedKeys.map((key) => {
+  return keys.map((key) => {
     if (_.isPlainObject(data1[key]) && _.isPlainObject(data2[key])) {
       return {
         name: key,
-        children: buildTree(data1[key], data2[key]),
+        children: compareObjects(data1[key], data2[key]),
         type: 'nested',
       };
     }
@@ -41,5 +40,10 @@ const buildTree = (data1, data2) => {
     };
   });
 };
+
+const buildTree = (object1, object2) => ({
+  type: 'root',
+  children: compareObjects(object1, object2),
+});
 
 export default buildTree;
