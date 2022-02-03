@@ -15,11 +15,11 @@ const plain = (data, pathKeys = []) => {
   const fieldName = fieldKeys.join('.');
   switch (data.type) {
     case 'root': {
-      const output = _.compact(data.children.flatMap((node) => plain(node)));
+      const output = data.children.filter((node) => node.type !== 'unchanged').map((node) => plain(node));
       return output.join('\n');
     }
     case 'nested': {
-      const output = _.compact(data.children.flatMap((node) => plain(node, fieldKeys)));
+      const output = data.children.filter((node) => node.type !== 'unchanged').map((node) => plain(node, fieldKeys));
       return output.join('\n');
     }
     case 'added':
